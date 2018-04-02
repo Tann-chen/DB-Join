@@ -1,3 +1,5 @@
+package Project2;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -13,7 +15,7 @@ public class nested_loop {
         File file3 = new File("./src/Project2/JoinT3.txt"); // output file
 
         FileInputStream fileInputStream1 = new FileInputStream(file1);
-        FileInputStream fileInputStream2 = new FileInputStream(file2);
+//        FileInputStream fileInputStream2 = new FileInputStream(file2);
         FileOutputStream fileOutputStream = new FileOutputStream(file3);
 
         byte[] block1 = new byte[4040];
@@ -21,6 +23,8 @@ public class nested_loop {
 
         int a ;
         while ( (a = fileInputStream1.read(block1)) != -1) {
+
+            FileInputStream fileInputStream2 = new FileInputStream(file2);
 
             ArrayList<Float> grade = new ArrayList<>();
 
@@ -139,7 +143,11 @@ public class nested_loop {
             }
 
             studentCourse.clear();// empty hashmap
+            fileInputStream2.close();
+
         }
+
+        fileInputStream1.close();
 
         fileOutputStream.flush();
         fileOutputStream.close();
