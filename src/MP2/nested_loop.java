@@ -1,8 +1,11 @@
-package Project2;
-
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /***/
 public class nested_loop {
@@ -14,6 +17,7 @@ public class nested_loop {
         File file2 = new File("./src/Project2/JoinT2.txt"); // large relation table
         File file3 = new File("./src/Project2/JoinT3.txt"); // output file
 
+
         FileInputStream fileInputStream1 = new FileInputStream(file1);
 //        FileInputStream fileInputStream2 = new FileInputStream(file2);
         FileOutputStream fileOutputStream = new FileOutputStream(file3);
@@ -21,8 +25,14 @@ public class nested_loop {
         byte[] block1 = new byte[4040];
         byte[] block2 = new byte[3640];
 
+
         int a ;
+        int outer_IO = 0;
+        int inner_IO = 0;
+
         while ( (a = fileInputStream1.read(block1)) != -1) {
+
+            outer_IO++;
 
             FileInputStream fileInputStream2 = new FileInputStream(file2);
 
@@ -44,8 +54,11 @@ public class nested_loop {
 
 //            System.out.println(studentCourse);
 
+
             int b;
             while ((b = fileInputStream2.read(block2)) != -1) {
+
+                inner_IO++;
 
                 byte[] enrollment_studentIDBYTES = new byte[8];
                 String enrollment_studentID = null;
@@ -152,12 +165,22 @@ public class nested_loop {
         fileOutputStream.flush();
         fileOutputStream.close();
 
+        System.out.println("Outer I/O times: " + outer_IO);
+        System.out.println("Inner I/O times: " + outer_IO);
+
     }
 
 
     public static void main(String[] args) throws IOException {
 
+        long startTime = System.currentTimeMillis();
+
         Block_based_nested_loop();
+
+        long endTime = System.currentTimeMillis();
+
+        System.out.println("Running Time: " + (endTime - startTime) / 1000 + " s");
+
 
     }
 }
