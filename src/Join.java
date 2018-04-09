@@ -26,9 +26,11 @@ public class Join {
         //sort T2
         initRunTimeParam(130, 28);
         int t2SubLists = phaseOne("JoinT2.txt", "t2");
+        System.out.println("Pass 1 IO:" + iocost);
 
         passTwo("t1",t1SubLists,"t2",t2SubLists);
         recordTime(startTime, "The execute time for sorting R1 and R2");
+        System.out.println("Total IO:" + iocost);
     }
 
     /**
@@ -154,11 +156,13 @@ public class Join {
                 for (int i = 0; i < t1SublistsCount; i++) {
                     if (compare(t1Buffer[i][currentT1[i]], miniT1) < 0) {
                         miniT1 = t1Buffer[i][currentT1[i]].clone();
+                        System.out.println("xx");
                     }
                 }
 
+
                 //get smallest id in T2
-                byte[] miniT2 = new byte[28];
+                byte[] miniT2 = new byte[27];
                 Arrays.fill(miniT2,Byte.MAX_VALUE);
 
                 for (int i = 0; i < t2SublistsCount; i++) {
@@ -245,14 +249,14 @@ public class Join {
 
                     // accumulate values in T2
                     int creditAccumulator = 0;
-                    int creditGradeAccumulator = 0;
+                    float creditGradeAccumulator = 0.0f;
                     for (int i = 0; i < t2SublistsCount; i++) {
                         while (compare(miniT2, t2Buffer[i][currentT2[i]]) == 0) {
                             byte[] creditByte = new byte[2];
                             byte[] gradeByte = new byte[4];
-                            System.arraycopy(t2Buffer[i][currentT2[i]], 20, creditByte, 0, 2);
-                            System.arraycopy(t2Buffer[i][currentT2[i]], 22, gradeByte, 0, 4);
-                            int credit = Integer.parseInt(new String(creditByte));
+                            System.arraycopy(t2Buffer[i][currentT2[i]], 21, creditByte, 0, 2);
+                            System.arraycopy(t2Buffer[i][currentT2[i]], 23, gradeByte, 0, 4);
+                            int credit = Integer.parseInt(new String(creditByte).trim());
                             String creditStr = new String(gradeByte);
                             float grade = castGradeToVal(creditStr.trim());
                             creditAccumulator += credit;
