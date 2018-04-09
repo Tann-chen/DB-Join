@@ -7,8 +7,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-/***/
+
 public class nested_loop {
+
+    static int outer_IO = 0;
+    static int inner_IO = 0;
 
 
     public static void Block_based_nested_loop() throws IOException {
@@ -22,15 +25,12 @@ public class nested_loop {
 //        FileInputStream fileInputStream2 = new FileInputStream(file2);
         FileOutputStream fileOutputStream = new FileOutputStream(file3);
 
-        byte[] block1 = new byte[4040];
+        byte[] block1 = new byte[4040 * 1000];
         byte[] block2 = new byte[3640];
 
 
-        int a ;
-        int outer_IO = 0;
-        int inner_IO = 0;
-
-        while ( (a = fileInputStream1.read(block1)) != -1) {
+        int a;
+        while ((a = fileInputStream1.read(block1)) != -1) {
 
             outer_IO++;
 
@@ -43,7 +43,7 @@ public class nested_loop {
             byte[] studentIDBYTES = new byte[8];
             String studentID = null;
 
-            for (int i = 0; i < block1.length; i += 101) {
+            for (int i = 0; i < a; i += 101) {
                 for (int j = i, k = 0; j < i + 8; j++, k++) {
                     studentIDBYTES[k] = block1[j];
                 }
@@ -52,8 +52,7 @@ public class nested_loop {
                 studentCourse.put(studentID, grade);
             }
 
-//            System.out.println(studentCourse);
-
+            block1 = new byte[4040 * 1000];
 
             int b;
             while ((b = fileInputStream2.read(block2)) != -1) {
@@ -117,12 +116,9 @@ public class nested_loop {
 
                         }
                         studentCourse.put(enrollment_studentID, grade);
-//                        System.out.println(studentCourse);
-
                     }
 
                 }
-
             }
 
             String output = null;
@@ -166,7 +162,7 @@ public class nested_loop {
         fileOutputStream.close();
 
         System.out.println("Outer I/O times: " + outer_IO);
-        System.out.println("Inner I/O times: " + outer_IO);
+        System.out.println("Inner I/O times: " + inner_IO);
 
     }
 
@@ -180,7 +176,6 @@ public class nested_loop {
         long endTime = System.currentTimeMillis();
 
         System.out.println("Running Time: " + (endTime - startTime) / 1000 + " s");
-
 
     }
 }
