@@ -23,13 +23,16 @@ public class Join {
         //sort T1
         initRunTimeParam(40, 101);
         int t1SubLists = phaseOne("JoinT1.txt", "t1");
+        recordTime(startTime,"The time after sub-sorted T1");
         //sort T2
         initRunTimeParam(130, 28);
         int t2SubLists = phaseOne("JoinT2.txt", "t2");
+        recordTime(startTime,"The time after sub-sorted T2");
+        System.out.println("=====================================");
         System.out.println("Pass 1 IO:" + iocost);
 
         passTwo("t1",t1SubLists,"t2",t2SubLists);
-        recordTime(startTime, "The execute time for sorting R1 and R2");
+        recordTime(startTime, "The time after join T1 and T2");
         System.out.println("Total IO:" + iocost);
     }
 
@@ -114,16 +117,22 @@ public class Join {
         System.gc();
         return sublistCount;
     }
+    
+    
+    
 
     public static void passTwo(String t1Prefix, int t1SublistsCount, String t2Prefix, int t2SublistsCount) {
         System.gc();
         byte[] outputBuffer = new byte[4048];
+        byte[] outputBuffer2 = new byte[4048*2];
         int outputPointer = 0;
+        int outputPointer2 = 0;
         byte[][][] t1Buffer = new byte[t1SublistsCount][40][101];   //one buffer for every t1 sublist
         byte[][][] t2Buffer = new byte[t2SublistsCount][130][28];   //one buffer for every t2 sublist
 
         try {
             FileOutputStream out = new FileOutputStream("GPA.txt");
+            FileOutputStream out2 = new FileOutputStream("Join.txt");
             FileInputStream[] in1Arr = new FileInputStream[t1SublistsCount];
             FileInputStream[] in2Arr = new FileInputStream[t2SublistsCount];
 
@@ -155,8 +164,7 @@ public class Join {
 
                 for (int i = 0; i < t1SublistsCount; i++) {
                     if (compare(t1Buffer[i][currentT1[i]], miniT1) < 0) {
-                        miniT1 = t1Buffer[i][currentT1[i]].clone();
-                        System.out.println("xx");
+                        miniT1 = t1Buffer[i][currentT1[i]].clone();           
                     }
                 }
 
@@ -224,6 +232,8 @@ public class Join {
                         System.out.println("=========================== END  ===========================");
                         //write final output buffer to file
                         out.write(outputBuffer, 0, outputPointer);
+                    
+                        out2.write(outputBuffer2, 0, outputPointer2);
                         iocost++;
                         break;
                     }
@@ -259,6 +269,20 @@ public class Join {
                             int credit = Integer.parseInt(new String(creditByte).trim());
                             String creditStr = new String(gradeByte);
                             float grade = castGradeToVal(creditStr.trim());
+                            
+                            
+                            byte[] temptt1_arr = new byte[100];
+                            System.arraycopy(miniT1,0,temptt1_arr,0,100);
+                            
+                            byte[] temptt2_arr = new byte[27];
+                            System.arraycopy( t2Buffer[i][currentT2[i]],0,temptt2_arr,0,27);
+                            
+                            String tempTT1 = new String(temptt1_arr);
+                            String tempTT2 = new String(temptt2_arr);
+                            //todo
+                            outputPointer2 = writeFile2(outputBuffer2, outputPointer2, tempTT1,tempTT2, out2);
+                            
+                            
                             creditAccumulator += credit;
                             creditGradeAccumulator += (grade * credit);
 
@@ -367,7 +391,7 @@ public class Join {
 
     public static int writeFile(byte[] outputBuffer, int outputPointer, byte[] studentIdBytes, float gpa, FileOutputStream out) {
         String studentId = new String(studentIdBytes);
-        String temp = studentId + " " + String.valueOf(gpa) + "\n";
+        String temp = studentId + " " + String.valueOf(gpa) + "\r\n";
         byte[] tempByte = temp.getBytes();
 
         if (outputBuffer.length - outputPointer - 1 < tempByte.length) {
@@ -386,6 +410,31 @@ public class Join {
         outputPointer += tempByte.length;
         return outputPointer;
     }
+    
+    
+    
+    
+    public static int writeFile2(byte[] outputBuffer, int outputPointer, String t1, String t2, FileOutputStream out) {
+        String temp = t1 + " " + t2 + "\r\n";
+        byte[] tempByte = temp.getBytes();
+
+        if (outputBuffer.length - outputPointer - 1 < tempByte.length) {
+            try {
+                out.write(outputBuffer, 0, outputPointer);
+                iocost++;
+                outputPointer = 0;
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+
+
+        //copy data
+        System.arraycopy(tempByte, 0, outputBuffer, outputPointer, tempByte.length);
+        outputPointer += tempByte.length;
+        return outputPointer;
+    }
+    
 
 
     public static float castGradeToVal(String grade) {

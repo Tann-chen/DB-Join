@@ -2,62 +2,74 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 
-public class nested_loop {
+public class Nested_loop {
 
     static int outer_IO = 0;
     static int inner_IO = 0;
-
+    static int blocks_per_buffer = 200; // tune this
+    static int joinCounting = 0;
 
     public static void Block_based_nested_loop() throws IOException {
 
-        File file1 = new File("./src/Project2/JoinT1.txt"); // small relation table
-        File file2 = new File("./src/Project2/JoinT2.txt"); // large relation table
-        File file3 = new File("./src/Project2/JoinT3.txt"); // output file
+        File file1 = new File("JoinT1.txt"); // small relation table
+        File file2 = new File("JoinT2.txt"); // large relation table
+        File file3 = new File("JoinT3.txt"); // output file
+        PrintWriter writer = new PrintWriter("Join4.txt", "UTF-8");
 
 
         FileInputStream fileInputStream1 = new FileInputStream(file1);
 //        FileInputStream fileInputStream2 = new FileInputStream(file2);
         FileOutputStream fileOutputStream = new FileOutputStream(file3);
 
-        byte[] block1 = new byte[4040 * 1000];
-        byte[] block2 = new byte[3640];
+        byte[] bufferT1 = new byte[4040 * blocks_per_buffer];
+        byte[] bufferT2 = new byte[3640];
 
 
         int a;
-        while ((a = fileInputStream1.read(block1)) != -1) {
+        while ((a = fileInputStream1.read(bufferT1)) != -1) {
+        	
+        	outer_IO++;
+        	
+        	System.out.println(" ============== The "+ outer_IO +" time outer IO ================");
 
-            outer_IO++;
 
             FileInputStream fileInputStream2 = new FileInputStream(file2);
 
             ArrayList<Float> grade = new ArrayList<>();
 
             Map<String, ArrayList<Float>> studentCourse = new HashMap<>();
-
+            Map<String, String> studentInfo = new HashMap<>();
+            Map<String, String> CourseInfo = new HashMap<>();
+            
             byte[] studentIDBYTES = new byte[8];
+            byte[] studentInfoBYTE = new byte[100];
             String studentID = null;
 
             for (int i = 0; i < a; i += 101) {
                 for (int j = i, k = 0; j < i + 8; j++, k++) {
-                    studentIDBYTES[k] = block1[j];
+                    studentIDBYTES[k] = bufferT1[j];
                 }
+                System.arraycopy(bufferT1, i, studentInfoBYTE, 0, 100);
                 studentID = new String(studentIDBYTES);
 
                 studentCourse.put(studentID, grade);
+                studentInfo.put(studentID, new String(studentInfoBYTE));
             }
 
-            block1 = new byte[4040 * 1000];
+            bufferT1 = new byte[4040 * blocks_per_buffer];
 
             int b;
-            while ((b = fileInputStream2.read(block2)) != -1) {
+            while ((b = fileInputStream2.read(bufferT2)) != -1) {
 
                 inner_IO++;
+            	
 
                 byte[] enrollment_studentIDBYTES = new byte[8];
                 String enrollment_studentID = null;
@@ -67,20 +79,22 @@ public class nested_loop {
 
                 byte[] enrollment_gradeBYTES = new byte[4];
                 String enrollment_grade = null;
-
-                for (int i = 0; i < block2.length; i += 28) {
+                
+                byte[] courseInfoBYTE = new byte[28];
+                for (int i = 0; i < b; i += 28) {
+                	System.arraycopy(bufferT2, i, courseInfoBYTE, 0, 28);
                     for (int j = i, k = 0; j < i + 8; j++, k++) {
-                        enrollment_studentIDBYTES[k] = block2[j]; // get studentID
+                        enrollment_studentIDBYTES[k] = bufferT2[j]; // get studentID
                     }
                     enrollment_studentID = new String(enrollment_studentIDBYTES);
 
                     for (int j = i + 21, k = 0; j < i + 21 + 2; j++, k++) {
-                        enrollment_creditBYTES[k] = block2[j]; // get credits
+                        enrollment_creditBYTES[k] = bufferT2[j]; // get credits
                     }
                     enrollment_credit = new String(enrollment_creditBYTES);
 
                     for (int j = i + 23, k = 0; j < i + 23 + 4; j++, k++) {
-                        enrollment_gradeBYTES[k] = block2[j]; // get grade
+                        enrollment_gradeBYTES[k] = bufferT2[j]; // get grade
                     }
 
                     enrollment_grade = new String(enrollment_gradeBYTES);
@@ -94,7 +108,10 @@ public class nested_loop {
                     float accumulatedGrade = Float.parseFloat(enrollment_credit) * grade_number;
 
                     if (studentCourse.containsKey(enrollment_studentID)) {
-
+                    	++joinCounting;
+                    	writer.print(studentInfo.get(enrollment_studentID));
+                    	writer.print(new String(courseInfoBYTE));
+//                    	writer.println(enrollment_grade);
                         if (studentCourse.get(enrollment_studentID) == null || studentCourse.get(enrollment_studentID).size() == 0) {
                             grade = new ArrayList<>();
 
@@ -120,7 +137,7 @@ public class nested_loop {
 
                 }
             }
-
+            
             String output = null;
 
             Iterator<Map.Entry<String, ArrayList<Float>>> entryIterator = studentCourse.entrySet().iterator();
@@ -142,40 +159,81 @@ public class nested_loop {
                     Float average_grade = all_grade / all_credit;
 
                     output += String.valueOf(average_grade);
-
                 }
 
                 output += "\n";
 
                 fileOutputStream.write(output.getBytes());
-
             }
 
-            studentCourse.clear();// empty hashmap
+            studentCourse.clear();// empty map
             fileInputStream2.close();
-
         }
 
         fileInputStream1.close();
 
         fileOutputStream.flush();
         fileOutputStream.close();
-
+        writer.close();
+        
+        System.out.println();
         System.out.println("Outer I/O times: " + outer_IO);
         System.out.println("Inner I/O times: " + inner_IO);
-
     }
-
 
     public static void main(String[] args) throws IOException {
 
         long startTime = System.currentTimeMillis();
+
+        System.out.println("Total Memory: " + Runtime.getRuntime().totalMemory() / (1024) + "KB");
+        System.out.println("Free Memory: " + Runtime.getRuntime().freeMemory() / (1024) + "KB");
+        System.out.println();
 
         Block_based_nested_loop();
 
         long endTime = System.currentTimeMillis();
 
         System.out.println("Running Time: " + (endTime - startTime) / 1000 + " s");
+        System.out.println("Total join number:"+joinCounting);
+    }
+}
+
+class Grade {
+
+    public static float castGradeToVal(String grade) {
+
+        switch (grade) {
+            case "A+":
+                return 4.3f;
+            case "A":
+                return 4.0f;
+            case "A-":
+                return 3.7f;
+            case "B+":
+                return 3.3f;
+            case "B":
+                return 3f;
+            case "B-":
+                return 2.7f;
+            case "C+":
+                return 2.3f;
+            case "C":
+                return 2f;
+            case "C-":
+                return 1.7f;
+            case "D+":
+                return 1.3f;
+            case "D":
+                return 1f;
+            case "D-":
+                return 0.7f;
+            case "Fail":
+                return 0;
+            case "R":
+                return 0;
+            default:
+                return 0;
+        }
 
     }
 }
